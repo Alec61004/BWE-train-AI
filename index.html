@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f7fa" />
+    <title>Audio Restore Studio</title>
+    <meta
+      name="description"
+      content="Phục hồi dải tần cho âm thanh lowpass 4kHz hoặc 8kHz thành WAV full-band 44.1kHz."
+    />
+    <link rel="preconnect" href="https://unpkg.com" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <a class="brand" href="/" aria-label="Audio Restore Studio">
+          <span class="brand-mark" aria-hidden="true">
+            <i data-lucide="audio-waveform"></i>
+          </span>
+          <span>
+            <strong>Audio Restore</strong>
+            <small>Bandwidth Extension Studio</small>
+          </span>
+        </a>
+
+        <div class="runtime-status" id="runtimeStatus" data-state="ready" role="status" aria-live="polite">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span>Sẵn sàng</span>
+        </div>
+      </header>
+
+      <main class="workspace" aria-labelledby="app-title">
+        <section class="page-heading">
+          <div>
+            <p class="eyebrow">AI Audio Restoration</p>
+            <h1 id="app-title">Phục hồi dải tần âm thanh</h1>
+            <p class="lead">
+              Tải lên bản nhạc bị cắt dải tần. Hệ thống sẽ phục hồi và xuất bản WAV full-band 44.1kHz.
+            </p>
+          </div>
+
+          <div class="output-specs" aria-label="Thông số đầu ra">
+            <div>
+              <i data-lucide="gauge" aria-hidden="true"></i>
+              <span><strong>44.1 kHz</strong><small>Sample rate</small></span>
+            </div>
+            <div>
+              <i data-lucide="file-audio" aria-hidden="true"></i>
+              <span><strong>WAV</strong><small>Định dạng xuất</small></span>
+            </div>
+          </div>
+        </section>
+
+        <fieldset class="mode-switch" aria-label="Chế độ sử dụng">
+          <label>
+            <input type="radio" name="mode" value="restore" checked />
+            <span>
+              <i data-lucide="wand-sparkles" aria-hidden="true"></i>
+              <strong>Phục hồi</strong>
+              <small>Dành cho file lowpass</small>
+            </span>
+          </label>
+          <label>
+            <input type="radio" name="mode" value="benchmark" />
+            <span>
+              <i data-lucide="chart-no-axes-combined" aria-hidden="true"></i>
+              <strong>Kiểm thử model</strong>
+              <small>Dành cho bản gốc full-band</small>
+            </span>
+          </label>
+        </fieldset>
+
+        <div class="control-grid">
+          <section class="panel upload-panel" aria-labelledby="upload-title">
+            <div class="panel-heading">
+              <span class="step-number">01</span>
+              <div>
+                <h2 id="upload-title">Chọn bản nhạc</h2>
+                <p id="uploadSubtitle">File lowpass 4kHz hoặc 8kHz</p>
+              </div>
+            </div>
+
+            <label class="dropzone" id="dropzone">
+              <input id="fileInput" type="file" accept="audio/*,.wav,.mp3,.flac,.ogg,.m4a" />
+              <span class="upload-icon" aria-hidden="true">
+                <i data-lucide="upload-cloud"></i>
+              </span>
+              <span class="drop-title">Kéo thả file vào đây</span>
+              <span class="drop-copy">hoặc <strong>chọn file từ máy</strong></span>
+              <span class="format-list">WAV · MP3 · FLAC · M4A · OGG</span>
+            </label>
+
+            <div class="file-card" id="fileCard" hidden>
+              <span class="file-type-icon" aria-hidden="true">
+                <i data-lucide="music-2"></i>
+              </span>
+              <div class="file-details">
+                <strong id="fileName"></strong>
+                <span id="fileMeta"></span>
+              </div>
+              <button class="icon-button" id="clearFileButton" type="button" title="Bỏ file" aria-label="Bỏ file">
+                <i data-lucide="x"></i>
+              </button>
+            </div>
+
+            <div class="audio-row" id="inputAudioRow" hidden>
+              <div class="audio-label">
+                <i data-lucide="headphones" aria-hidden="true"></i>
+                <span id="inputAudioLabel">Nghe bản gốc lowpass</span>
+              </div>
+              <audio id="inputPlayer" controls preload="metadata"></audio>
+            </div>
+          </section>
+
+          <section class="panel settings-panel" aria-labelledby="settings-title">
+            <div class="panel-heading">
+              <span class="step-number">02</span>
+              <div>
+                <h2 id="settings-title">Thiết lập phục hồi</h2>
+                <p id="settingsSubtitle">Chọn dải tần của file đầu vào</p>
+              </div>
+            </div>
+
+            <div class="field hidden-field">
+              <label for="apiEndpoint">API endpoint</label>
+              <input id="apiEndpoint" type="text" value="/restore" autocomplete="off" />
+            </div>
+
+            <fieldset class="field cutoff-field">
+              <legend id="cutoffLegend">Dải tần bị cắt</legend>
+              <div class="segmented" role="radiogroup" aria-label="Dải lowpass đầu vào">
+                <label id="autoCutoffOption">
+                  <input type="radio" name="cutoff" value="auto" checked />
+                  <span><i data-lucide="scan-search" aria-hidden="true"></i>Tự động</span>
+                </label>
+                <label>
+                  <input type="radio" name="cutoff" value="4000" />
+                  <span><i data-lucide="radio" aria-hidden="true"></i>4kHz</span>
+                </label>
+                <label>
+                  <input type="radio" name="cutoff" value="8000" />
+                  <span><i data-lucide="radio-tower" aria-hidden="true"></i>8kHz</span>
+                </label>
+              </div>
+              <p class="hint" id="cutoffHint">
+                <i data-lucide="sparkles" aria-hidden="true"></i>
+                Hệ thống sẽ tự phân tích phổ âm thanh và chọn model phù hợp.
+              </p>
+            </fieldset>
+
+            <div class="field compact hidden-field">
+              <label for="chunkSeconds">Độ dài chunk</label>
+              <input id="chunkSeconds" type="number" min="1" max="20" step="1" value="5" />
+            </div>
+
+            <div class="field compact hidden-field">
+              <label for="concurrency">Số chunk gửi đồng thời</label>
+              <input id="concurrency" type="number" min="1" max="6" step="1" value="1" />
+            </div>
+
+            <button class="primary-button" id="restoreButton" type="button" disabled>
+              <i data-lucide="wand-sparkles" aria-hidden="true"></i>
+              <span id="restoreButtonLabel">Phục hồi âm thanh</span>
+            </button>
+          </section>
+        </div>
+
+        <section class="progress-panel" aria-labelledby="progress-heading">
+          <div class="progress-main">
+            <span class="progress-icon" aria-hidden="true">
+              <i data-lucide="activity"></i>
+            </span>
+            <div class="progress-copy">
+              <span class="section-label" id="progress-heading">Tiến trình</span>
+              <strong id="progressTitle">Chưa có file</strong>
+            </div>
+            <strong class="progress-value" id="progressText">0%</strong>
+          </div>
+          <div
+            class="meter"
+            role="progressbar"
+            aria-label="Tiến trình phục hồi"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+          >
+            <div id="progressBar"></div>
+          </div>
+          <ol class="chunk-list" id="chunkList"></ol>
+        </section>
+
+        <section class="result-panel" id="resultPanel" aria-labelledby="result-title" hidden>
+          <div class="result-heading">
+            <span class="success-icon" aria-hidden="true">
+              <i data-lucide="circle-check-big"></i>
+            </span>
+            <div>
+              <p class="eyebrow" id="resultEyebrow">Hoàn tất phục hồi</p>
+              <h2 id="result-title">Bản full-band 44.1kHz đã sẵn sàng</h2>
+            </div>
+          </div>
+
+          <div class="result-actions" id="restoreResult">
+            <audio id="outputPlayer" controls preload="metadata"></audio>
+            <a class="download-button" id="downloadLink" download="restored-fullband-44100.wav">
+              <i data-lucide="download" aria-hidden="true"></i>
+              <span>Tải file WAV</span>
+            </a>
+          </div>
+
+          <div class="benchmark-result" id="benchmarkResult" hidden>
+            <div class="benchmark-summary">
+              <div>
+                <span>Cải thiện dải cao</span>
+                <strong id="highImprovement">--</strong>
+              </div>
+              <div>
+                <span>Cải thiện toàn dải</span>
+                <strong id="fullImprovement">--</strong>
+              </div>
+              <div>
+                <span>Đoạn kiểm thử</span>
+                <strong id="benchmarkDuration">--</strong>
+              </div>
+            </div>
+
+            <div class="comparison-audio" aria-label="Ba phiên bản âm thanh để đối chiếu">
+              <div>
+                <span class="comparison-index">A</span>
+                <div>
+                  <strong>Bản gốc full-band</strong>
+                  <small>Mốc tham chiếu</small>
+                </div>
+                <audio id="referencePlayer" controls preload="metadata"></audio>
+              </div>
+              <div>
+                <span class="comparison-index">B</span>
+                <div>
+                  <strong id="lowpassAudioTitle">Lowpass mô phỏng 4kHz</strong>
+                  <small>Đầu vào của model</small>
+                </div>
+                <audio id="lowpassPlayer" controls preload="metadata"></audio>
+              </div>
+              <div>
+                <span class="comparison-index">C</span>
+                <div>
+                  <strong>Model phục hồi</strong>
+                  <small>Đầu ra full-band 44.1kHz</small>
+                </div>
+                <audio id="benchmarkRestoredPlayer" controls preload="metadata"></audio>
+              </div>
+            </div>
+
+            <div class="metric-table">
+              <div class="metric-head">
+                <span>Chỉ số</span>
+                <span>Lowpass</span>
+                <span>Phục hồi</span>
+              </div>
+              <div>
+                <span>LSD dải cao <small>thấp hơn tốt hơn</small></span>
+                <strong id="baselineHighLsd">--</strong>
+                <strong id="restoredHighLsd">--</strong>
+              </div>
+              <div>
+                <span>LSD toàn dải <small>thấp hơn tốt hơn</small></span>
+                <strong id="baselineFullLsd">--</strong>
+                <strong id="restoredFullLsd">--</strong>
+              </div>
+              <div>
+                <span>LSD dải thấp <small>càng ít thay đổi càng tốt</small></span>
+                <strong id="baselineLowLsd">--</strong>
+                <strong id="restoredLowLsd">--</strong>
+              </div>
+              <div>
+                <span>SNR <small>cao hơn tốt hơn</small></span>
+                <strong id="baselineSnr">--</strong>
+                <strong id="restoredSnr">--</strong>
+              </div>
+            </div>
+
+            <div class="validation-row" id="validationRow"></div>
+
+            <div class="benchmark-footer">
+              <span id="benchmarkMeta"></span>
+              <a class="download-button" id="benchmarkDownloadLink" download="benchmark-restored.wav">
+                <i data-lucide="download" aria-hidden="true"></i>
+                <span>Tải bản phục hồi</span>
+              </a>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="app-footer">
+        <span>Audio Restore Studio</span>
+        <span>AI bandwidth extension · 44.1kHz</span>
+      </footer>
+    </div>
+
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <script src="./config.js"></script>
+    <script src="./app.js"></script>
+    <script>
+      if (window.lucide) window.lucide.createIcons();
+    </script>
+  </body>
+</html>
