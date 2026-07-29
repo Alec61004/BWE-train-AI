@@ -1,4 +1,6 @@
 const CUTOFF_ANALYSIS_SECONDS = 20;
+const MAX_UPLOAD_BYTES = 80 * 1024 * 1024;
+const MAX_AUDIO_SECONDS = 6 * 60;
 const API_BASE_URL = String(window.BWE_API_BASE_URL || "").trim().replace(/\/+$/, "");
 
 const state = {
@@ -132,6 +134,12 @@ function setMode(mode) {
 }
 
 async function loadFile(file) {
+  if (file.size > MAX_UPLOAD_BYTES) {
+    alert("File vượt quá giới hạn 80 MB.");
+    els.fileInput.value = "";
+    return;
+  }
+
   cleanupOutput();
   state.file = file;
   setStatus("Đang giải mã");
@@ -140,6 +148,12 @@ async function loadFile(file) {
   try {
     const arrayBuffer = await file.arrayBuffer();
     state.inputBuffer = await decodeAudioData(arrayBuffer);
+    if (state.inputBuffer.duration > MAX_AUDIO_SECONDS) {
+      throw new Error("Bài hát vượt quá giới hạn 6 phút.");
+    }
+    if (state.inputBuffer.numberOfChannels > 2) {
+      throw new Error("File âm thanh chỉ được có tối đa 2 kênh.");
+    }
 
     if (state.inputUrl) URL.revokeObjectURL(state.inputUrl);
     state.inputUrl = URL.createObjectURL(file);
@@ -166,7 +180,10 @@ async function loadFile(file) {
     resetFile();
     setStatus("Lỗi file");
     setProgress(0, "Không giải mã được file audio", "!");
-    alert("Không giải mã được file audio này. Hãy thử WAV, MP3, FLAC, M4A hoặc OGG khác.");
+    alert(
+      error.message ||
+      "Không giải mã được file audio này. Hãy thử WAV, MP3, FLAC, M4A hoặc OGG khác.",
+    );
   }
 
   updateReadyState();

@@ -23,6 +23,14 @@ window.BWE_API_BASE_URL = "https://example.trycloudflare.com";
 Quick Tunnel URLs change when the tunnel restarts. A named Cloudflare Tunnel
 with a hostname such as `api.modelbwe.com` avoids redeploying the frontend.
 
+The backend must also allow the final frontend origin in its WSL `.env`:
+
+```bash
+BWE_ALLOWED_ORIGINS=https://your-project.vercel.app
+```
+
+Restart `bash start_production.sh` after changing `.env`.
+
 ## Deploy
 
 Upload the contents of the `vercel-frontend` package to a Vercel project, or
@@ -43,5 +51,5 @@ of these are running:
 
 - The Windows computer.
 - WSL.
-- `python server.py`.
+- `bash start_production.sh`.
 - `cloudflared`.
